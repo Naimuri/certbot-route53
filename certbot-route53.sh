@@ -11,9 +11,9 @@ if [ -z "${CERTBOT_DOMAIN}" ]; then
     --manual-auth-hook "${MYSELF}" \
     --manual-cleanup-hook "${MYSELF}" \
     --preferred-challenge dns \
-    --config-dir "${PWD}/letsencrypt" \
-    --work-dir "${PWD}/letsencrypt" \
-    --logs-dir "${PWD}/letsencrypt" \
+    --config-dir "/etc/letsencrypt" \
+    --work-dir "/etc/letsencrypt" \
+    --logs-dir "/etc/letsencrypt" \
     "$@"
 
 else
