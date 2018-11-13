@@ -19,28 +19,17 @@ if [ -z "${CERTBOT_DOMAIN}" ]; then
 else
   [[ ${CERTBOT_AUTH_OUTPUT} ]] && ACTION="DELETE" || ACTION="UPSERT"
 
-  printf -v QUERY 'HostedZones[?Name == `%s.`]|[?Config.PrivateZone == `false`].Id' "${CERTBOT_DOMAIN}"
-
-  HOSTED_ZONE_ID="$(aws route53 list-hosted-zones --query "${QUERY}" --output text)"
-
-  if [ -z "${HOSTED_ZONE_ID}" ]; then
-    # CERTBOT_DOMAIN is a hostname, not a domain (zone)
-    # We strip out the hostname part to leave only the domain
-    DOMAIN="$(sed -r 's/^[^.]+.(.*)$/\1/' <<< "${CERTBOT_DOMAIN}")"
-
+  DOMAIN=${CERTBOT_DOMAIN}
+  while [ -z "${HOSTED_ZONE_ID}" ]
+  do
     printf -v QUERY 'HostedZones[?Name == `%s.`]|[?Config.PrivateZone == `false`].Id' "${DOMAIN}"
-
     HOSTED_ZONE_ID="$(aws route53 list-hosted-zones --query "${QUERY}" --output text)"
-  fi
-
-  if [ -z "${HOSTED_ZONE_ID}" ]; then
-    if [ -n "${DOMAIN}" ]; then
-      echo "No hosted zone found that matches domain ${DOMAIN} or hostname ${CERTBOT_DOMAIN}"
-    else
-      echo "No hosted zone found that matches ${CERTBOT_DOMAIN}"
+    DOMAIN="$(sed -r 's/^[^.]+.(.*)$/\1/' <<< "${DOMAIN}")"
+    if [ -z "${DOMAIN}" ] && [ -z "${HOSTED_ZONE_ID}" ]; then
+      echo "No hosted zone found for ${CERTBOT_DOMAIN}"
+      exit 1
     fi
-    exit 1
-  fi
+  done
 
   aws route53 wait resource-record-sets-changed --id "$(
     aws route53 change-resource-record-sets \
