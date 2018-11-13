@@ -22,6 +22,7 @@ else
   DOMAIN=${CERTBOT_DOMAIN}
   while [ -z "${HOSTED_ZONE_ID}" ]
   do
+    echo "Checking hosted zone for ${DOMAIN}"
     printf -v QUERY 'HostedZones[?Name == `%s.`]|[?Config.PrivateZone == `false`].Id' "${DOMAIN}"
     HOSTED_ZONE_ID="$(aws route53 list-hosted-zones --query "${QUERY}" --output text)"
     DOMAIN="$(sed -r 's/^[^.]+.(.*)$/\1/' <<< "${DOMAIN}")"
